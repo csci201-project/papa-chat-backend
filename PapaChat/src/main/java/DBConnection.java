@@ -158,7 +158,7 @@ public class DBConnection {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		return 2;
+		return 2; 
 	}
 	
 	
