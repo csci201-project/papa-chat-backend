@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class DBConnection {
@@ -117,6 +118,13 @@ public class DBConnection {
 		return valid;
 	}
 	
+	public HashMap<String, String> getUserInfo(){
+		HashMap<String, String> userInfo = new HashMap<String, String>();
+		
+		
+		return userInfo;
+	}
+	
 	/**
 	 * Registers a class if one does not already exist
 	 *  
@@ -225,7 +233,6 @@ public class DBConnection {
 		return null;
 	}
 
-	
 	/**
 	 * Correctly closes all connections to the DB with this instance.
 	 */
