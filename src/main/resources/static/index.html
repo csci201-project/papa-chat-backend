@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kafka WebSocket Test</title>
+</head>
+<body>
+    <div>
+        <h3>Topics</h3>
+        <input type="text" id="topicInput" placeholder="Enter topic name" />
+        <button onclick="createTopic()">Create Topic</button>
+        <button onclick="getTopics()">Refresh Topics</button>
+        <div id="topicList"></div>
+    </div>
+
+    <div>
+        <h3>Messages</h3>
+        <select id="topicSelect">
+            <option value="">Select a topic</option>
+        </select>
+        <input type="text" id="messageInput" placeholder="Enter message" />
+        <button onclick="sendMessage()">Send</button>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let ws = null;
+
+        function connectWebSocket(topic) {
+            if (ws) {
+                ws.close();
+            }
+            
+            console.log(`ws://${window.location.host}/ws/chat/${topic}?token=token`);
+            
+            ws = new WebSocket(`ws://${window.location.host}/ws/chat/${topic}?token=token`);
+            
+            console.log(ws);
+            
+            ws.onopen = function() {
+                console.log('WebSocket connected to topic:', topic);
+            };
+
+            ws.onclose = function() {
+                console.log('WebSocket disconnected');
+            };
+
+            ws.onmessage = function(event) {
+                console.log('Received message:', event.data);
+                const messages = document.getElementById('messages');
+                try {
+                    const jsonMessage = JSON.parse(event.data);
+                    if (jsonMessage.error) {
+                        messages.innerHTML += '<div class="error">' + jsonMessage.error + '</div>';
+                    } else {
+                        const messageText = jsonMessage.message || JSON.stringify(jsonMessage);
+                        messages.innerHTML += '<div>' + messageText + '</div>';
+                    }
+                } catch (e) {
+                    console.error('Error parsing message:', e);
+                    messages.innerHTML += '<div>Error parsing message: ' + event.data + '</div>';
+                }
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        async function createTopic() {
+            const topicInput = document.getElementById('topicInput');
+            const topic = topicInput.value.trim();
+            
+            if (!topic) return;
+
+            try {
+                const response = await fetch(`/api/topics/${topic}`, {
+                    method: 'POST'
+                });
+                const result = await response.text();
+                alert(result);
+                getTopics();
+                topicInput.value = '';
+            } catch (error) {
+                console.error('Error creating topic:', error);
+            }
+        }
+
+        async function getTopics() {
+            try {
+                const response = await fetch('/api/topics');
+                const topics = await response.json();
+                updateTopicList(topics);
+            } catch (error) {
+                console.error('Error fetching topics:', error);
+            }
+        }
+
+        function updateTopicList(topics) {
+            const topicList = document.getElementById('topicList');
+            const topicSelect = document.getElementById('topicSelect');
+            
+            // Update topic list display
+            topicList.innerHTML = topics.map(topic => 
+                `<div>${topic}</div>`
+            ).join('');
+            
+            // Update topic select dropdown
+            topicSelect.innerHTML = '<option value="">Select a topic</option>' + 
+                topics.map(topic => 
+                    `<option value="${topic}">${topic}</option>`
+                ).join('');
+        }
+
+        function sendMessage() {
+            const topicSelect = document.getElementById('topicSelect');
+            const messageInput = document.getElementById('messageInput');
+            const topic = topicSelect.value;
+            const message = messageInput.value.trim();
+            
+            if (!topic || !message || !ws) return;
+
+            const chatMessage = {
+                type: 'chat',
+                message: message
+            };
+            ws.send(JSON.stringify(chatMessage));
+            messageInput.value = '';
+        }
+
+        // Topic selection change handler
+        document.getElementById('topicSelect').addEventListener('change', function(e) {
+            const topic = e.target.value;
+            if (topic) {
+                connectWebSocket(topic);
+            }
+        });
+
+        // Initial topics load
+        getTopics();
+    </script>
+
+    <style>
+        .error { color: red; }
+        div { margin: 10px 0; }
+    </style>
+</body>
+</html>
