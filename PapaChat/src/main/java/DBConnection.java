@@ -59,11 +59,11 @@ public class DBConnection {
 	 *  
 	 * @param username			user's username, eg: <i>"root"</i>
 	 * @param password			user's password, eg: <i>"password"</i>
-	 * @return 0 if user does not already exists and is successfully registered
-	 * 		   1 if user already exists
+	 * @return 0 if user does not already exists and is successfully registered<br>
+	 * 		   1 if user already exists<br>
 	 *		   2 if there was an error in registration
 	 */
-	public int registerUser(String username, String password) {
+	public int registerUser(String fname, String lname, String email, String username, String password) {
 		try {
 			ps = conn.prepareStatement("SELECT COUNT(username) FROM users WHERE username=?");
 			ps.setString(1, username);
@@ -71,9 +71,12 @@ public class DBConnection {
 			if(rs.next() && rs.getInt(1) > 0) {
 				return 1;
 			}
-			ps = conn.prepareStatement("INSERT INTO users (username, password) VALUES (?, ?)");
-			ps.setString(1, username);
-			ps.setString(2, password);
+			ps = conn.prepareStatement("INSERT INTO users (fname, lname, email, username, password) VALUES (?, ?, ?, ? ,?)");
+			ps.setString(1, fname);
+			ps.setString(2, lname);
+			ps.setString(3, email);
+			ps.setString(4, password);
+			ps.setString(5, username);
 			int success = ps.executeUpdate();
 			if(success > 0) return 0;
 		} catch (SQLException e) {
@@ -118,10 +121,19 @@ public class DBConnection {
 		return valid;
 	}
 	
-	public HashMap<String, String> getUserInfo(){
+	public HashMap<String, String> getUserInfo(String username){
 		HashMap<String, String> userInfo = new HashMap<String, String>();
-		
-		
+		try {
+			ps = conn.prepareStatement("SELECT * FROM users WHERE username=?");
+			ps.setString(1, username);
+			rs = ps.executeQuery();
+			if(rs.next()) {
+				
+			}
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}		
 		return userInfo;
 	}
 	
