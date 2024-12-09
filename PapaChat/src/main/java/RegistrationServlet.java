@@ -38,6 +38,8 @@ public class RegistrationServlet extends HttpServlet{
 				preparedResponse.addProperty("message", "Registration successful.");
 			} else {
 				System.out.println("Registration Failed");
+				preparedResponse.addProperty("verified", false);
+				preparedResponse.addProperty("message", "Registration unsuccessful.");
 			}
 		}
 		
