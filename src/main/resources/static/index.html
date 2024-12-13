@@ -19,6 +19,7 @@
         </select>
         <input type="text" id="messageInput" placeholder="Enter message" />
         <button onclick="sendMessage()">Send</button>
+        <button onclick="testWebSocket()">Test Connection</button>
         <div id="messages"></div>
     </div>
 
@@ -27,43 +28,79 @@
 
         function connectWebSocket(topic) {
             if (ws) {
+                console.log('Closing existing WebSocket connection');
                 ws.close();
             }
             
-            console.log(`ws://${window.location.host}/ws/chat/${topic}?token=token`);
+            const wsUrl = `ws://${window.location.host}/ws/chat/${topic}?token=token`;
+            console.log('Attempting to connect to WebSocket:', wsUrl);
             
-            ws = new WebSocket(`ws://${window.location.host}/ws/chat/${topic}?token=token`);
-            
-            console.log(ws);
-            
-            ws.onopen = function() {
-                console.log('WebSocket connected to topic:', topic);
-            };
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = function() {
+                    console.log('WebSocket successfully connected to topic:', topic);
+                    console.log('WebSocket object after connection:', ws);
+                    document.getElementById('messages').innerHTML += '<div class="system">Connected to topic: ' + topic + '</div>';
+                };
 
-            ws.onclose = function() {
-                console.log('WebSocket disconnected');
-            };
+                ws.onclose = function(event) {
+                    console.log('WebSocket disconnected with code:', event.code, 'reason:', event.reason);
+                    document.getElementById('messages').innerHTML += '<div class="system">Disconnected from topic</div>';
+                };
 
-            ws.onmessage = function(event) {
-                console.log('Received message:', event.data);
-                const messages = document.getElementById('messages');
-                try {
-                    const jsonMessage = JSON.parse(event.data);
-                    if (jsonMessage.error) {
-                        messages.innerHTML += '<div class="error">' + jsonMessage.error + '</div>';
-                    } else {
-                        const messageText = jsonMessage.message || JSON.stringify(jsonMessage);
-                        messages.innerHTML += '<div>' + messageText + '</div>';
+                ws.onmessage = function(event) {
+                    console.log('Message received:', {
+                        rawData: event.data,
+                        type: typeof event.data,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    const messages = document.getElementById('messages');
+                    if (!messages) {
+                        console.error('Messages div not found!');
+                        return;
                     }
-                } catch (e) {
-                    console.error('Error parsing message:', e);
-                    messages.innerHTML += '<div>Error parsing message: ' + event.data + '</div>';
-                }
-            };
+                    
+                    try {
+                        const jsonMessage = JSON.parse(event.data);
+                        console.log('Parsed message:', jsonMessage);
+                        
+                        // Skip confirmation messages
+                        if (jsonMessage.type === 'confirmation') {
+                            return;
+                        }
+                        
+                        // Only display messages from other clients
+                        if (jsonMessage.type === 'chat' && !jsonMessage.isLocal) {
+                            const timestamp = new Date().toLocaleTimeString();
+                            const newMessage = `<div class="message">
+                                <span class="timestamp">[${timestamp}]</span> 
+                                <span class="text">${jsonMessage.message}</span>
+                            </div>`;
+                            messages.innerHTML += newMessage;
+                            messages.scrollTop = messages.scrollHeight;
+                        }
+                    } catch (e) {
+                        console.error('Error handling message:', e);
+                        messages.innerHTML += '<div class="error">Error handling message: ' + e.message + '</div>';
+                    }
+                };
 
-            ws.onerror = function(error) {
-                console.error('WebSocket error:', error);
-            };
+                ws.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    console.error('WebSocket error details:', {
+                        readyState: ws.readyState,
+                        bufferedAmount: ws.bufferedAmount,
+                        protocol: ws.protocol,
+                        url: ws.url
+                    });
+                    document.getElementById('messages').innerHTML += '<div class="error">WebSocket error occurred</div>';
+                };
+            } catch (error) {
+                console.error('Error creating WebSocket:', error);
+                document.getElementById('messages').innerHTML += '<div class="error">Error creating WebSocket: ' + error.message + '</div>';
+            }
         }
 
         async function createTopic() {
@@ -117,14 +154,65 @@
             const topic = topicSelect.value;
             const message = messageInput.value.trim();
             
-            if (!topic || !message || !ws) return;
+            console.log('Attempting to send message...');
+            console.log('Topic:', topic);
+            console.log('Message:', message);
+            console.log('WebSocket state:', ws ? ws.readyState : 'no websocket');
+            
+            if (!topic || !message) {
+                console.error('Topic or message is empty');
+                return;
+            }
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                console.error('WebSocket is not connected');
+                return;
+            }
 
+            // Display message immediately
+            const timestamp = new Date().toLocaleTimeString();
+            const messages = document.getElementById('messages');
+            const newMessage = `<div class="message">
+                <span class="timestamp">[${timestamp}]</span> 
+                <span class="text">${message}</span>
+            </div>`;
+            messages.innerHTML += newMessage;
+            messages.scrollTop = messages.scrollHeight;
+
+            // Send message to server
             const chatMessage = {
                 type: 'chat',
                 message: message
             };
+
+            console.log('Sending message:', chatMessage);
             ws.send(JSON.stringify(chatMessage));
             messageInput.value = '';
+        }
+
+        function testWebSocket() {
+            if (!ws) {
+                console.log('No WebSocket connection exists');
+                document.getElementById('messages').innerHTML += '<div class="error">No WebSocket connection exists</div>';
+                return;
+            }
+
+            console.log('Testing WebSocket connection...');
+            console.log('WebSocket state:', ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][ws.readyState]);
+            console.log('WebSocket object:', ws);
+
+            try {
+                const testMessage = {
+                    type: 'chat',
+                    message: 'Test message ' + new Date().toISOString()
+                };
+                ws.send(JSON.stringify(testMessage));
+                console.log('Test message sent successfully');
+                document.getElementById('messages').innerHTML += '<div class="system">Test message sent</div>';
+            } catch (error) {
+                console.error('Error sending test message:', error);
+                document.getElementById('messages').innerHTML += '<div class="error">Error sending test message: ' + error.message + '</div>';
+            }
         }
 
         // Topic selection change handler
@@ -137,6 +225,28 @@
 
         // Initial topics load
         getTopics();
+
+        // Add some basic styles
+        const styles = `
+            .system { color: #666; font-style: italic; }
+            .error { color: red; }
+            .message { color: #000; margin: 5px 0; }
+            .timestamp { color: #666; font-size: 0.8em; margin-right: 8px; }
+            .text { color: #000; }
+            #messages { 
+                height: 300px; 
+                overflow-y: auto; 
+                border: 1px solid #ccc; 
+                padding: 10px;
+                margin: 10px 0;
+                background: #f9f9f9;
+            }
+        `;
+
+        // Add the styles to the page
+        const styleElement = document.createElement('style');
+        styleElement.textContent = styles;
+        document.head.appendChild(styleElement);
     </script>
 
     <style>
