@@ -1,6 +1,7 @@
 package com.papa.app.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,5 +31,16 @@ public class TopicController {
     @GetMapping
     public ResponseEntity<?> getAllTopics() {
         return ResponseEntity.ok(topicService.getAllTopics());
+    }
+
+    @DeleteMapping("/{topic}")
+    public ResponseEntity<?> deleteTopic(@PathVariable String topic) {
+        boolean deleted = topicService.deleteTopic(topic);
+        return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/{topic}/exists")
+    public ResponseEntity<?> checkTopicExists(@PathVariable String topic) {
+        return ResponseEntity.ok(topicService.topicExists(topic));
     }
 }

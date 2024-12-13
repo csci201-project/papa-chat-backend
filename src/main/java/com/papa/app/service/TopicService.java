@@ -20,4 +20,8 @@ public class TopicService {
     public Set<String> getAllTopics() {
         return topics;
     }
+
+    public boolean deleteTopic(String topic) {
+        return topics.remove(topic);
+    }
 }
