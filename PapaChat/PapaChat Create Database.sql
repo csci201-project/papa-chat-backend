@@ -37,11 +37,22 @@ CREATE TABLE `class_standing` (
 CREATE TABLE `chat_history` (
   `chatHistoryID` int NOT NULL AUTO_INCREMENT,
   `classID` int NOT NULL,
-  `date` datetime NOT NULL,
-  `chatHistoryFileName` VARCHAR(100) NOT NULL,
+  `userID` int NOT NULL,
+  `datetime` datetime NOT NULL,
+  `message` VARCHAR(280),
   PRIMARY KEY (`chatHistoryID`),
-  FOREIGN KEY (`classID`) REFERENCES classes(classID)
+  FOREIGN KEY (`classID`) REFERENCES classes(classID),
+  FOREIGN KEY (`userID`) REFERENCES users(userID)
 ) ;
+
+CREATE TABLE `ban_history` (
+	`banHistoryID` int NOT NULL AUTO_INCREMENT,
+    `userID` int NOT NULL, # userID of the user banned
+    `timeOfBan` datetime NOT NULL,
+    `duration` int NOT NULL, # duration in minutes, -1 if indefinite,
+    PRIMARY KEY(`banHistoryID`),
+    FOREIGN KEY (`userID`) REFERENCES users(userID)
+);
 
 CREATE TABLE `emotes` (
   `emoteID` int NOT NULL AUTO_INCREMENT,
@@ -57,3 +68,13 @@ CREATE TABLE `class_emotes` (
   FOREIGN KEY (`classID`) REFERENCES classes(classID),
   FOREIGN KEY (`emoteID`) REFERENCES emotes(emoteID)
 ) ;
+
+-- OLD - TO DELETE
+-- CREATE TABLE `chat_history` (
+--   `chatHistoryID` int NOT NULL AUTO_INCREMENT,
+--   `classID` int NOT NULL,
+--   `date` datetime NOT NULL,
+--   `chatHistoryFileName` VARCHAR(100),
+--   PRIMARY KEY (`chatHistoryID`),
+--   FOREIGN KEY (`classID`) REFERENCES classes(classID)
+-- ) ;
