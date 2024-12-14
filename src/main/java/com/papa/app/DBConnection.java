@@ -131,6 +131,7 @@ public class DBConnection {
 				ps.setString(2, lname);
 				ps.setString(3, email);
 				ps.setString(4, password);
+				ps.setString(5, Integer.toString(userID));
 				int success = ps.executeUpdate();
 				if(success > 0) {
 					return 1;
