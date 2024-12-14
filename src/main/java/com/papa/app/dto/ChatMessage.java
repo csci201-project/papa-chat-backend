@@ -3,6 +3,7 @@ package com.papa.app.dto;
 public class ChatMessage {
     private String type;
     private String message;
+    private String user;
 
     // Default constructor
     public ChatMessage() {
@@ -23,5 +24,13 @@ public class ChatMessage {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 }

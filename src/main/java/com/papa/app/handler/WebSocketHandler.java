@@ -29,7 +29,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
         kafkaService.getHistory(topic).thenAccept(messages -> {
             messages.forEach(msg -> {
                 try {
-                    session.sendMessage(new TextMessage(formatMessage(msg)));
+                    ChatMessage chatMessage = new ChatMessage();
+                    chatMessage.setType("chat");
+                    chatMessage.setMessage(msg);
+                    session.sendMessage(new TextMessage(formatMessage(chatMessage)));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -42,9 +45,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String topic = extractTopicFromSession(session);
         try {
             ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
-            String formattedMessage = formatMessage(chatMessage.getMessage());
 
-            // 1. First broadcast instantly via WebSocket
+            // Use ObjectMapper to serialize the entire message
+            String formattedMessage = objectMapper.writeValueAsString(chatMessage);
+
+            // Broadcast to other clients
             Map<WebSocketSession, String> sessions = topicSessions.get(topic);
             if (sessions != null) {
                 sessions.forEach((clientSession, t) -> {
@@ -58,7 +63,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 });
             }
 
-            // 2. Then send to Kafka asynchronously for persistence
+            // Send to Kafka asynchronously
             CompletableFuture.runAsync(() -> {
                 kafkaService.send(topic, chatMessage.getMessage());
             });
@@ -85,7 +90,12 @@ public class WebSocketHandler extends TextWebSocketHandler {
         return path.substring(path.lastIndexOf('/') + 1);
     }
 
-    private String formatMessage(String message) {
-        return String.format("{\"type\":\"chat\",\"message\":\"%s\"}", message);
+    private String formatMessage(ChatMessage message) {
+        try {
+            return objectMapper.writeValueAsString(message);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "{}";
+        }
     }
 }
