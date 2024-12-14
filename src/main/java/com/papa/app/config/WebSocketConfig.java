@@ -7,8 +7,8 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 import com.papa.app.handler.WebSocketHandler;
 import com.papa.app.interceptor.WebSocketAuthInterceptor;
-import com.papa.app.service.TopicService;
 import com.papa.app.service.KafkaService;
+import com.papa.app.service.TopicService;
 
 @Configuration
 @EnableWebSocket

@@ -1,14 +1,16 @@
 package com.papa.app.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.papa.app.dto.ChatMessage;
 import com.papa.app.service.KafkaService;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CompletableFuture;
 
 public class WebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -29,10 +31,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
         kafkaService.getHistory(topic).thenAccept(messages -> {
             messages.forEach(msg -> {
                 try {
-                    ChatMessage chatMessage = new ChatMessage();
-                    chatMessage.setType("chat");
-                    chatMessage.setMessage(msg);
-                    session.sendMessage(new TextMessage(formatMessage(chatMessage)));
+                    ChatMessage chatMessage = objectMapper.readValue(msg, ChatMessage.class);
+                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessage)));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -45,17 +45,17 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String topic = extractTopicFromSession(session);
         try {
             ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
+            String jsonMessage = objectMapper.writeValueAsString(chatMessage);
 
-            // Use ObjectMapper to serialize the entire message
-            String formattedMessage = objectMapper.writeValueAsString(chatMessage);
+            // INSERT CHAT FILTERING HERE
 
             // Broadcast to other clients
             Map<WebSocketSession, String> sessions = topicSessions.get(topic);
             if (sessions != null) {
                 sessions.forEach((clientSession, t) -> {
-                    if (clientSession != session && clientSession.isOpen()) {
+                    if (clientSession.isOpen()) {
                         try {
-                            clientSession.sendMessage(new TextMessage(formattedMessage));
+                            clientSession.sendMessage(new TextMessage(jsonMessage));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -65,7 +65,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
             // Send to Kafka asynchronously
             CompletableFuture.runAsync(() -> {
-                kafkaService.send(topic, chatMessage.getMessage());
+                kafkaService.send(topic, jsonMessage);
             });
 
         } catch (Exception e) {
@@ -88,14 +88,5 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private String extractTopicFromSession(WebSocketSession session) {
         String path = session.getUri().getPath();
         return path.substring(path.lastIndexOf('/') + 1);
-    }
-
-    private String formatMessage(ChatMessage message) {
-        try {
-            return objectMapper.writeValueAsString(message);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "{}";
-        }
     }
 }
