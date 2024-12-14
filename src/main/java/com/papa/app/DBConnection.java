@@ -30,7 +30,7 @@ public class DBConnection {
 	private PreparedStatement ps = null;
 	private ResultSet rs = null;
 	private String DBusername = "root"; // CHANGE
-	private String DBpassword = "rootroot"; // CHANGE
+	private String DBpassword = "root"; // CHANGE
 
 	// ========================================== Database ==========================================
 
@@ -41,7 +41,7 @@ public class DBConnection {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(
-				"jdbc:mysql://localhost:3306/PapaChat?useSSL=false",
+				"jdbc:mysql://localhost:3306/papachat?useSSL=false",
 				DBusername,
 				DBpassword
 			);
@@ -118,8 +118,8 @@ public class DBConnection {
 				ps.setString(1, fname);
 				ps.setString(2, lname);
 				ps.setString(3, email);
-				ps.setString(4, password);
-				ps.setString(5, username);
+				ps.setString(4, username);
+				ps.setString(5, password);
 				int success = ps.executeUpdate();
 				if(success > 0) {
 					return 0;
