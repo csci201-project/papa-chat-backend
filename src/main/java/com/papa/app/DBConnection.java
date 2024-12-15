@@ -23,9 +23,6 @@ import java.util.regex.Pattern;
 // emotes: emoteID [int], emoteName [str], emoteFileName [str]
 // class_emotes: classID [int], emoteID [int]
 
-// TODO
-// change user info - add to registerUser function
-// get a class's list of emotes, emote library,
 
 public class DBConnection {
 	private Connection conn = null;
@@ -196,7 +193,7 @@ public class DBConnection {
 	// ======================================== Ban History =========================================
 
 	/**
-	 * Checks if a user is banned in a class and returns the remaining minutes. If integer returned is negative, the user is no longer banned.
+	 * Bans a user.
 	 *
 	 * @param username			The username of the user, eg: <i>"andrecro"</i>
 	 * @param classCode			The code of the class, eg: <i>"CSCI201"</i>
@@ -206,13 +203,16 @@ public class DBConnection {
 	 */
 	public boolean banUser(String username, String classCode, int duration) {
 		int userID = getUserID(username);
-		if(userID == -1) {
-			return false;
-		}
-		try {
-			ps = conn.prepareStatement("INSERT INTO ban_history (userID, timeOfBan, duration) VALUES (?, NOW(), ?)");
-			ps.setInt(1, userID);
-			ps.setInt(2, duration);
+		int classID = getClassID(classCode);
+        if(userID == -1 || classID == -1) {
+            return false;
+        }
+        try {
+            ps = conn.prepareStatement("INSERT INTO ban_history (classID, userID, timeOfBan, duration) VALUES (?, ?, NOW(), ?)");
+            ps.setInt(1, classID);
+            ps.setInt(2, userID);
+            ps.setInt(3, duration);
+
 			int success = ps.executeUpdate();
 			return success > 0;
 		} catch (SQLException e) {
@@ -226,38 +226,41 @@ public class DBConnection {
 	 * @param username			The username of the user, eg: <i>"andrecro"</i>
 	 * @param classCode			The code of the class, eg: <i>"CSCI201"</i>
 	 * @return integer minutes remaining if user is banned<br>
-	 * 		   -1 if username or classCode does not exists
+	 * 		   -5 if username does not exists
+	 * 		   -10 if classCode does not exist
 	 */
 	public int isUserBanned(String username, String classCode) {
 		try {
-			// Get userID and classID if username and classCode exists, otherwise return -1
-			int userID = getUserID(username);
-			if(userID == -1) {
-				return -1;
-			}
-			int classID = getClassID(classCode);
-			if(classID == -1) {
-				return -1;
-			}
-
-			// Check if username is enrolled in a class
-			ps = conn.prepareStatement("SELECT timeOfBan, duration FROM ban_history WHERE userID=? AND classID=? ORDER BY timeOfBan DESC");
-			ps.setInt(1, userID);
-			ps.setInt(2, classID);
-			rs = ps.executeQuery();
-			if(rs.next()) {
+            // Get userID and classID if username and classCode exists, otherwise return -1
+            int userID = getUserID(username);
+            if(userID == -1) {
+                return -5;
+            }
+            int classID = getClassID(classCode);
+            if(classID == -1) {
+                return -10;
+            }
+            System.out.println("class2 id: " + classID);
+            // Check if username is enrolled in a class
+            ps = conn.prepareStatement("SELECT timeOfBan, duration FROM ban_history WHERE userID=? AND classID=? ORDER BY timeOfBan DESC");
+            ps.setInt(1, userID);
+            ps.setInt(2, classID);
+            rs = ps.executeQuery();
+            if(rs.next()) {
                 Timestamp timeOfBan = rs.getTimestamp("timeOfBan");
                 int duration = rs.getInt("duration");
+                if(duration == -1) return 0;
                 LocalDateTime banStartTime = timeOfBan.toLocalDateTime();
                 LocalDateTime currentTime = LocalDateTime.now();
                 LocalDateTime banEndTime = banStartTime.plusMinutes(duration);
                 Duration remainingDuration = Duration.between(currentTime, banEndTime);
-                return(int) remainingDuration.toMinutes();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return -1;
+                int remainingDurationInt = (int) remainingDuration.toMinutes();
+                if(remainingDurationInt > 0) return 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 1;
 	}
 
 	// ========================================== Classes ===========================================
@@ -272,7 +275,7 @@ public class DBConnection {
 	 * 		   1 if class already exists<br>
 	 * 		   2 if there was an error in registration
 	 */
-	public int registerClass(String classCode, int classDuration, int classStartTime, String classDays) {
+	public int registerClass(String classCode) {
 		try {
 			// Check if the class already exists
 			int classID = getClassID(classCode);
@@ -280,11 +283,8 @@ public class DBConnection {
 				return 1;
 			}
 			// Register the class
-			ps = conn.prepareStatement("INSERT INTO classes (classCode, classDuration, classStartTime, classDays) VALUES (?, ? ,?, ?)");
+			ps = conn.prepareStatement("INSERT INTO classes (classCode) VALUES (?)");
 			ps.setString(1, classCode);
-			ps.setInt(2, classDuration);
-			ps.setInt(3, classStartTime);
-			ps.setString(4, classDays);
 			int success = ps.executeUpdate();
 			if(success > 0) {
 				return 0;
@@ -296,7 +296,7 @@ public class DBConnection {
 	}
 
 	/**
-	 * Retrieve user information with keys: className, classDuration, classStartTime, classDays
+	 * OUTDATED DONT USE: Retrieve user information with keys: className, classDuration, classStartTime, classDays
 	 *
 	 * @param classCode			class's classCode, eg: <i>"CSCI201"</i>
 	 * @return HashMap<String, String> of a user's information with keys mentioned above<br>
@@ -425,7 +425,35 @@ public class DBConnection {
 		return false;
 	}
 
-
+	/**
+	 * If the user is a moderator or admin in the class, return true
+	 *
+	 * @param username			user's username, eg: <i>"root"</i>
+	 * @param classCode			class' code, eg: <i>"CSCI201"</i>
+	 * @return true if user is a moderator or admin<br>
+	 * 		   false if error or cannot ban
+	 */
+	public boolean canBan(String username, String classCode) {
+		int userID = getUserID(username);
+		int classID = getClassID(classCode);
+		if(classID == -1 || userID == -1) return false;
+		try {
+			ps = conn.prepareStatement("SELECT access FROM class_standing WHERE userID=? AND classID=?");
+			ps.setInt(1, userID);
+			ps.setInt(2, classID);
+			rs = ps.executeQuery();
+			if(rs.next()) {
+				String access = rs.getString("access");
+				if(access == "admin" || access == "moderator") {
+					return true;
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
 	// ======================================= Chat History =========================================
 
 	/**
@@ -490,7 +518,7 @@ public class DBConnection {
 		List<String> history = new ArrayList<>();
 		try {
 			// Check if username exists
-			ps = conn.prepareStatement("SELECT userID FROM classes WHERE username=?");
+			ps = conn.prepareStatement("SELECT userID FROM users WHERE username=?");
 			ps.setString(1, username);
 			rs = ps.executeQuery();
 			if (rs.next()) {
