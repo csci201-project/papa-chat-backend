@@ -212,7 +212,7 @@ public class DBConnection {
 		try {
 			ps = conn.prepareStatement("INSERT INTO ban_history (userID, timeOfBan, duration) VALUES (?, NOW(), ?)");
 			ps.setInt(1, userID);
-			ps.setInt(3, duration);
+			ps.setInt(2, duration);
 			int success = ps.executeUpdate();
 			return success > 0;
 		} catch (SQLException e) {

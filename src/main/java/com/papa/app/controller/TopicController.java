@@ -21,11 +21,18 @@ public class TopicController {
 
     @PostMapping("/{topic}")
     public ResponseEntity<String> createTopic(@PathVariable String topic) {
-        boolean created = topicService.createTopic(topic);
-        if (created) {
-            return ResponseEntity.ok("Topic created: " + topic);
+        try {
+            System.out.println("Attempting to create topic: " + topic);
+            boolean created = topicService.createTopic(topic);
+            if (created) {
+                System.out.println("Topic created successfully: " + topic);
+                return ResponseEntity.ok("Topic created: " + topic);
+            }
+            return ResponseEntity.badRequest().body("Topic already exists: " + topic);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Error creating topic: " + e.getMessage());
         }
-        return ResponseEntity.badRequest().body("Topic already exists: " + topic);
     }
 
     @GetMapping
