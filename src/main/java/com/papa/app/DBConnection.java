@@ -444,8 +444,8 @@ public class DBConnection {
 			rs = ps.executeQuery();
 			if(rs.next()) {
 				String access = rs.getString("access");
-				if(access == "admin") return 0;
-				else if (access == "moderator") return 1;
+				if(access.equals("admin")) return 0;
+				else if (access.equals("moderator")) return 1;
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();

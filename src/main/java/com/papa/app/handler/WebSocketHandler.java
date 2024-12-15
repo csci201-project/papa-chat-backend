@@ -83,7 +83,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String topic = extractTopicFromSession(session);
         String username = chatMessage.getUser();
         DBConnection dbc = new DBConnection();
-        boolean sendMessage = dbc.isUserBanned(username, "all") != 0;
+        boolean sendMessage = dbc.isUserBanned(username, topic) != 0;
         int dbResponse = dbc.saveChat(username, topic, chatMsg);
         if(dbResponse != 0) System.out.println("Error: " + dbResponse);
     	// Check for Command
