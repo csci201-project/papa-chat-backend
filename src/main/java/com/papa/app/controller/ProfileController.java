@@ -13,10 +13,13 @@ public class ProfileController {
 
     @GetMapping("/{username}/history")
     public ResponseEntity<?> getChatHistory(@PathVariable String username) {
+        System.out.println("Fetching chat history for user: " + username); // Debug log
         List<String> history = dbConnection.getChatHistory(username);
         if (history != null) {
+            System.out.println("Found " + history.size() + " messages"); // Debug log
             return ResponseEntity.ok(history);
         }
+        System.out.println("No history found for user: " + username); // Debug log
         return ResponseEntity.notFound().build();
     }
 }
