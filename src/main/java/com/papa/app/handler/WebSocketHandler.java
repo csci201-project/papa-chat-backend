@@ -3,10 +3,14 @@ package com.papa.app.handler;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.io.IOException;
+import java.util.List;
 
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import org.springframework.web.socket.WebSocketMessage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.papa.app.dto.ChatMessage;
@@ -24,8 +28,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         String topic = extractTopicFromSession(session);
+        System.out.println("New WebSocket connection established for topic: " + topic);
         topicSessions.computeIfAbsent(topic, k -> new ConcurrentHashMap<>())
                 .put(session, topic);
+        System.out.println("Total sessions for topic " + topic + ": " + topicSessions.get(topic).size());
 
         // Load history from Kafka when client connects
         kafkaService.getHistory(topic).thenAccept(messages -> {
@@ -41,47 +47,45 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
+        String payload = message.getPayload().toString();
+        ChatMessage chatMessage = objectMapper.readValue(payload, ChatMessage.class);
         String topic = extractTopicFromSession(session);
-        try {
-            ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
-            String jsonMessage = objectMapper.writeValueAsString(chatMessage);
+        String jsonMessage = objectMapper.writeValueAsString(chatMessage);
 
-            // INSERT CHAT FILTERING HERE
-
-            // Broadcast to other clients
-            Map<WebSocketSession, String> sessions = topicSessions.get(topic);
-            if (sessions != null) {
-                sessions.forEach((clientSession, t) -> {
-                    if (clientSession.isOpen()) {
-                        try {
-                            clientSession.sendMessage(new TextMessage(jsonMessage));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
+        // Broadcast immediately to all clients
+        Map<WebSocketSession, String> sessions = topicSessions.get(topic);
+        if (sessions != null) {
+            TextMessage textMessage = new TextMessage(jsonMessage);
+            for (WebSocketSession clientSession : sessions.keySet()) {
+                if (clientSession.isOpen()) {
+                    clientSession.sendMessage(textMessage);
+                }
             }
-
-            // Send to Kafka asynchronously
-            CompletableFuture.runAsync(() -> {
-                kafkaService.send(topic, jsonMessage);
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+
+        // Send to Kafka asynchronously
+        CompletableFuture.runAsync(() -> {
+            try {
+                kafkaService.send(topic, jsonMessage);
+            } catch (Exception e) {
+                System.err.println("Failed to send to Kafka: " + e.getMessage());
+            }
+        });
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, org.springframework.web.socket.CloseStatus status) {
         String topic = extractTopicFromSession(session);
+        System.out.println("Connection closed for session: " + session.getId() + " in topic: " + topic);
         Map<WebSocketSession, String> sessions = topicSessions.get(topic);
         if (sessions != null) {
             sessions.remove(session);
             if (sessions.isEmpty()) {
                 topicSessions.remove(topic);
             }
+            System.out.println("Remaining sessions in topic " + topic + ": " +
+                    (sessions.isEmpty() ? 0 : sessions.size()));
         }
     }
 

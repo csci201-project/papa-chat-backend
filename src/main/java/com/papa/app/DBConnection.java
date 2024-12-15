@@ -30,7 +30,7 @@ public class DBConnection {
 	private PreparedStatement ps = null;
 	private ResultSet rs = null;
 	private String DBusername = "root"; // CHANGE
-	private String DBpassword = "root"; // CHANGE
+	private String DBpassword = "root3430"; // CHANGE
 
 	// ========================================== Database ==========================================
 
