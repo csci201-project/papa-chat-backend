@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.IOException;
 import java.util.List;
 
@@ -45,11 +46,36 @@ public class WebSocketHandler extends TextWebSocketHandler {
             });
         });
     }
+    
+    /**
+     * Censors bad words in the given text by replacing them with asterisks.
+     * 
+     * @param text The original text.
+     * @return The censored text.
+     */
+    private String censorBadWords(String text) {
+        if (text == null) {
+            return null; // Handle null messages gracefully
+        }
 
+        // List of inappropriate/bad words to censor
+        List<String> badWords = Arrays.asList("fuck", "shit", "bitch", "UCLA", "FUCK", "SHIT", "BITCH", "ucla", "FUCKING", "fucking");
+
+        for (String badWord : badWords) {
+            // Replace bad word with asterisks
+            String replacement = "*".repeat(badWord.length());
+            text = text.replaceAll("(?i)\\b" + badWord + "\\b", replacement);
+        }
+
+        return text;
+    }
+    
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
+    	//System.out.println(message.getPayload().toString());
         String payload = message.getPayload().toString();
         ChatMessage chatMessage = objectMapper.readValue(payload, ChatMessage.class);
+        chatMessage.setMessage(censorBadWords(chatMessage.getMessage()));
         String topic = extractTopicFromSession(session);
         String jsonMessage = objectMapper.writeValueAsString(chatMessage);
 
