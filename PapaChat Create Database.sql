@@ -64,17 +64,9 @@ CREATE TABLE `banned_words` (
     PRIMARY KEY (`wordID`)
 );
 
-CREATE TABLE `class_emotes` (
-  `classID` int NOT NULL,
-  `emoteID` int NOT NULL,
-  PRIMARY KEY (`emoteID`, `classID`),
-  FOREIGN KEY (`classID`) REFERENCES classes(classID),
-  FOREIGN KEY (`emoteID`) REFERENCES emotes(emoteID)
-);
-
 INSERT INTO users (username, password) VALUES ("admin", "admin");
 
-INSERT INTO classes (classCode, classDuration, classStartTime, classDays) VALUES ("all", 120, 1100, "T, Th");
+-- INSERT INTO classes (classCode, classDuration, classStartTime, classDays) VALUES ("all", 120, 1100, "T, Th");
 
 -- OLD - TO DELETE
 -- CREATE TABLE `chat_history` (
