@@ -559,10 +559,11 @@ public class DBConnection {
 				return null;
 			}
 
-			// Get chat history
+			// Get chat history with topic and message
 			ps = conn.prepareStatement(
-					"SELECT ch.topic, ch.datetime, ch.message " +
+					"SELECT ch.classID, ch.datetime, ch.message, c.classCode " +
 							"FROM chat_history ch " +
+							"JOIN classes c ON ch.classID = c.classID " +
 							"WHERE ch.userID = ? " +
 							"ORDER BY ch.datetime DESC");
 			ps.setInt(1, userID);
@@ -570,18 +571,18 @@ public class DBConnection {
 
 			while (rs.next()) {
 				String formattedMessage = String.format("%s %s %s",
-						rs.getString("topic"),
+						rs.getString("classCode"),
 						rs.getTimestamp("datetime"),
 						rs.getString("message"));
-				System.out.println("Found message: " + formattedMessage); // Debug log
+				System.out.println("Found message: " + formattedMessage);
 				history.add(formattedMessage);
 			}
 
-			System.out.println("Total messages found: " + history.size()); // Debug log
+			System.out.println("Total messages found: " + history.size());
 			return history;
 		} catch (SQLException e) {
 			e.printStackTrace();
-			System.err.println("SQL Error in getChatHistory: " + e.getMessage()); // Debug log
+			System.err.println("SQL Error in getChatHistory: " + e.getMessage());
 		}
 		return null;
 	}
