@@ -28,7 +28,10 @@ public class KafkaConfig {
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServersSystem.getenv("SPRING_KAFKA_BOOTSTRAP_SERVERS") != null ? System.getenv("SPRING_KAFKA_BOOTSTRAP_SERVERS") : "localhost:9092");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, 
+            System.getenv("SPRING_KAFKA_BOOTSTRAP_SERVERS") != null ? 
+            System.getenv("SPRING_KAFKA_BOOTSTRAP_SERVERS") : 
+            "localhost:9092");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "papa-chat-group");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
