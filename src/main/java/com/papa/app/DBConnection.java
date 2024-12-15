@@ -29,7 +29,7 @@ public class DBConnection {
 	private PreparedStatement ps = null;
 	private ResultSet rs = null;
 	private String DBusername = "root"; // CHANGE
-	private String DBpassword = "rootroot"; // CHANGE
+	private String DBpassword = "root3430"; // CHANGE
 
 	// ========================================== Database ==========================================
 
@@ -514,7 +514,7 @@ public class DBConnection {
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				int userID = rs.getInt("userID");
-				ps = conn.prepareStatement("SELECT classCode, datetime, message FROM chat_history WHERE userID=? ORDER BY date DESC");
+				ps = conn.prepareStatement("SELECT classCode, datetime, message FROM chat_history WHERE userID=? ORDER BY datetime DESC");
 				ps.setInt(1, userID);
 				rs = ps.executeQuery();
 				while(rs.next()) {
