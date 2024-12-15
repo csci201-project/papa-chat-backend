@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // users: userID [int], fname [str], lname [str], email [str], username [str], password [str]
 // classes: classID [int], className [str], classCode [str],
@@ -30,7 +32,7 @@ public class DBConnection {
 	private PreparedStatement ps = null;
 	private ResultSet rs = null;
 	private String DBusername = "root"; // CHANGE
-	private String DBpassword = "root"; // CHANGE
+	private String DBpassword = "sql@csc1"; // CHANGE
 
 	// ========================================== Database ==========================================
 
@@ -100,42 +102,27 @@ public class DBConnection {
 	/**
 	 * Registers a user into the DB if they do not exist. If user exists, update their info.
 	 *
-	 * @param fname				user's first name, eg: <i>"andre"</i>
-	 * @param lname				user't last name, eg: <i>"rodrigues"</i>
-	 * @param email				user's email, eg: <i>"andrecro@usc.edu"</i>
 	 * @param username			user's username, eg: <i>"root"</i>
 	 * @param password			user's password, eg: <i>"password"</i>
 	 * @return 0 if user does not already exists and is successfully registered<br>
 	 * 		   1 if user info was updated successfully<br>
 	 *		   2 if there was an error in registration
 	 */
-	public int registerUser(String fname, String lname, String email, String username, String password) {
+	public int registerUser(String username, String password) {
 		try {
 			int userID = getUserID(username);
 			if(userID == -1) {
 				// User does not exist - register
-				ps = conn.prepareStatement("INSERT INTO users (fname, lname, email, username, password) VALUES (?, ?, ?, ? ,?)");
-				ps.setString(1, fname);
-				ps.setString(2, lname);
-				ps.setString(3, email);
-				ps.setString(4, username);
-				ps.setString(5, password);
+				ps = conn.prepareStatement("INSERT INTO users (username, password) VALUES (? ,?)");
+				ps.setString(1, username);
+				ps.setString(2, password);
 				int success = ps.executeUpdate();
 				if(success > 0) {
 					return 0;
 				}
 			} else {
-				// User exist - update
-				ps = conn.prepareStatement("UPDATE users SET fname=?, lname=?, email=?, password=? WHERE userID=?");
-				ps.setString(1, fname);
-				ps.setString(2, lname);
-				ps.setString(3, email);
-				ps.setString(4, password);
-				ps.setString(5, Integer.toString(userID));
-				int success = ps.executeUpdate();
-				if(success > 0) {
-					return 1;
-				}
+				// User exist - return 1
+				return 1;
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -178,7 +165,7 @@ public class DBConnection {
 		return valid;
 	}
 	/**
-	 * Retrieve user information with keys: fname, lname, email
+	 * OUTDATED DO NOT USE Retrieve user information with keys: fname, lname, email
 	 *
 	 * @param username			user's username, eg: <i>"andrecro"</i>
 	 * @return HashMap<String, String> of a user's information with keys mentioned above<br>
@@ -274,12 +261,9 @@ public class DBConnection {
 	}
 
 	// ========================================== Classes ===========================================
-
-	// ========================================== Classes ===========================================
 	/**
 	 * Registers a class if one does not already exist
 	 *
-	 * @param className			The name of the class, eg: <i>"Software Development"</i>
 	 * @param classCode			The code of the class, eg: <i>"CSCI201"</i>
 	 * @param classDuration		The duration of the class in minutes, eg: <i>80</i> to indicate 1hr and 20 mins
 	 * @param classStartTime	The start time of the class using the 24-hour clock, eg: <i>1430</i> for 2:30pm
@@ -288,22 +272,19 @@ public class DBConnection {
 	 * 		   1 if class already exists<br>
 	 * 		   2 if there was an error in registration
 	 */
-	public int registerClass(String className, String classCode, int classDuration, int classStartTime, String classDays) {
+	public int registerClass(String classCode, int classDuration, int classStartTime, String classDays) {
 		try {
 			// Check if the class already exists
-			ps = conn.prepareStatement("SELECT COUNT(classCode) FROM classes WHERE classCode=?");
-			ps.setString(1, className);
-			rs = ps.executeQuery();
-			if(rs.next() && rs.getInt(1) > 0) {
+			int classID = getClassID(classCode);
+			if(classID == -1) {
 				return 1;
 			}
 			// Register the class
-			ps = conn.prepareStatement("INSERT INTO classes (className, classCode, classDuration, classStartTime, classDays) VALUES (?, ?, ? ,?, ?)");
-			ps.setString(1, className);
-			ps.setString(2, classCode);
-			ps.setInt(1, classDuration);
-			ps.setInt(2, classStartTime);
-			ps.setString(2, classDays);
+			ps = conn.prepareStatement("INSERT INTO classes (classCode, classDuration, classStartTime, classDays) VALUES (?, ? ,?, ?)");
+			ps.setString(1, classCode);
+			ps.setInt(2, classDuration);
+			ps.setInt(3, classStartTime);
+			ps.setString(4, classDays);
 			int success = ps.executeUpdate();
 			if(success > 0) {
 				return 0;
@@ -328,7 +309,6 @@ public class DBConnection {
 			ps.setString(1, classCode);
 			rs = ps.executeQuery();
 			if(rs.next()) {
-				classInfo.put("className", rs.getString("className"));
 				classInfo.put("classDuration", rs.getString("classDuration"));
 				classInfo.put("classStartTime", rs.getString("classStartTime"));
 				classInfo.put("classDays", rs.getString("classDays"));
@@ -343,11 +323,8 @@ public class DBConnection {
 		}
 		return null;
 	}
-
+	
 	// ====================================== Class Standing ========================================
-
-
-	// ===================================== Class Standings ========================================
 
 	/**
 	 * Enrolls a user in a class. If the user is already enrolled in that class, only their access will be updated.
@@ -451,8 +428,6 @@ public class DBConnection {
 
 	// ======================================= Chat History =========================================
 
-	// ======================================= Chat History =========================================
-
 	/**
 	 * Saves one chat message from a user for a class. Time stamp is when this function is called to insert the message into the database.
 	 *
@@ -502,7 +477,6 @@ public class DBConnection {
 		}
 		return 4;
 	}
-
 	/**
 	 * Retrieve the chat history of a user sorted by most recent. <br>
 	 * Each chat line is formatted as one string "classCode timeStamp (YYYY-MM-DD HH:MM:SS) message", <br>
@@ -537,42 +511,53 @@ public class DBConnection {
 		return null;
 	}
 
+	// ======================================= Banned Words =========================================
+	
+	public String censorBannedWords(String message) {
+        String censoredString = message;
+        try {
+        	ps = conn.prepareStatement("SELECT word FROM banned_words");
+            rs = ps.executeQuery();
 
+            while (rs.next()) {
+            	// Make banned word a pattern and find a match if exists
+                String bannedWord = rs.getString("word");
+                Pattern pattern = Pattern.compile(bannedWord, Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(censoredString);
+
+                // Censor with Astrix
+                if (matcher.find()) {
+                    String replacement = "*".repeat(bannedWord.length());
+                    censoredString = matcher.replaceAll(replacement);
+                }
+            }
+        } catch (SQLException e) {
+			e.printStackTrace();
+		}
+        return censoredString;
+	}
+	
+	public boolean addBannedWord(String word) {
+		try {
+			// Check if the word already exists
+			ps = conn.prepareStatement("SELECT word FROM banned_words WHERE word=?");
+			ps.setString(1, word);
+			rs = ps.executeQuery();
+			if(rs.next()) {
+				return false;
+			}
+			// Register the class
+			ps = conn.prepareStatement("INSERT INTO banned_words (word) VALUES (?)");
+			ps.setString(1, word);
+			int success = ps.executeUpdate();
+			return success > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false; 
+	}
 	// =========================================== Emotes ===========================================
-
-	// ======================================= DB Utilities =========================================
-	public int getUserID(String username) {
-		try {
-			// Get userID if username exists, otherwise return -1
-			ps = conn.prepareStatement("SELECT userID FROM users WHERE username=?");
-			ps.setString(1, username);
-			rs = ps.executeQuery();
-			if(!rs.next()) {
-				return -1;
-			}
-			return rs.getInt("userID");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return -1;
-	}
-
-	public int getClassID(String classCode) {
-		try {
-			// Get classID if classCode exists, otherwise return -1
-			ps = conn.prepareStatement("SELECT classID FROM classes WHERE classCode=?");
-			ps.setString(1, classCode);
-			rs = ps.executeQuery();
-			if(!rs.next()) {
-				return -1;
-			}
-			return rs.getInt("classID");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return -1;
-	}
-
+	
 	/**
 	 * Saves an emote to the database. If an emote with the same name exists, it will be updated.
 	 * @param emoteName The name of the emote (unique identifier)
@@ -659,4 +644,37 @@ public class DBConnection {
 			return false;
 		}
 	}
+	// ======================================= DB Utilities =========================================
+	public int getUserID(String username) {
+		try {
+			// Get userID if username exists, otherwise return -1
+			ps = conn.prepareStatement("SELECT userID FROM users WHERE username=?");
+			ps.setString(1, username);
+			rs = ps.executeQuery();
+			if(!rs.next()) {
+				return -1;
+			}
+			return rs.getInt("userID");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return -1;
+	}
+
+	public int getClassID(String classCode) {
+		try {
+			// Get classID if classCode exists, otherwise return -1
+			ps = conn.prepareStatement("SELECT classID FROM classes WHERE classCode=?");
+			ps.setString(1, classCode);
+			rs = ps.executeQuery();
+			if(!rs.next()) {
+				return -1;
+			}
+			return rs.getInt("classID");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return -1;
+	}
+
 }
