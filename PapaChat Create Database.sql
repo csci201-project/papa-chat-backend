@@ -29,12 +29,11 @@ CREATE TABLE `class_standing` (
 
 CREATE TABLE `chat_history` (
   `chatHistoryID` int NOT NULL AUTO_INCREMENT,
-  `classID` int NOT NULL,
+  `classCode` VARCHAR(60) NOT NULL,
   `userID` int NOT NULL,
   `datetime` datetime NOT NULL,
   `message` VARCHAR(280),
   PRIMARY KEY (`chatHistoryID`),
-  FOREIGN KEY (`classID`) REFERENCES classes(classID),
   FOREIGN KEY (`userID`) REFERENCES users(userID)
 );
 

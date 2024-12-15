@@ -483,8 +483,8 @@ public class DBConnection {
 			int classID = getClassID(classCode);
 			int userID = getUserID(username);
 			if(classID == -1 || userID == -1) return 1;
-        	ps = conn.prepareStatement("INSERT INTO chat_history (classID, userID, datetime, message) VALUES (?, ?, NOW(), ?)");
-			ps.setInt(1, classID);
+        	ps = conn.prepareStatement("INSERT INTO chat_history (classCode, userID, datetime, message) VALUES (?, ?, NOW(), ?)");
+			ps.setString(1, classCode);
 			ps.setInt(2, userID);
 			ps.setString(3, message);
 			int success = ps.executeUpdate();
