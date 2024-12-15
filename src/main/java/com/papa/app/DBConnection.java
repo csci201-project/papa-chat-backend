@@ -32,7 +32,7 @@ public class DBConnection {
 	private PreparedStatement ps = null;
 	private ResultSet rs = null;
 	private String DBusername = "root"; // CHANGE
-	private String DBpassword = "sql@csc1"; // CHANGE
+	private String DBpassword = "root3430"; // CHANGE
 
 	// ========================================== Database
 	// ==========================================
@@ -527,7 +527,7 @@ public class DBConnection {
 		List<String> history = new ArrayList<>();
 		try {
 			// Check if username exists
-			ps = conn.prepareStatement("SELECT userID FROM classes WHERE username=?");
+			ps = conn.prepareStatement("SELECT userID FROM users WHERE username=?");
 			ps.setString(1, username);
 			rs = ps.executeQuery();
 			if (rs.next()) {
