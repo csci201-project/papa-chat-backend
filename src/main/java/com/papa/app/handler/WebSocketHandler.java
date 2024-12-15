@@ -84,7 +84,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String username = chatMessage.getUser();
         DBConnection dbc = new DBConnection();
         boolean sendMessage = dbc.isUserBanned(username, topic) != 0;
-        int dbResponse = dbc.saveChat(username, topic, chatMsg);
+        int dbResponse = dbc.saveChat(topic, username, chatMsg);
         if(dbResponse != 0) System.out.println("Error: " + dbResponse);
     	// Check for Command
         if(chatMsg.charAt(0) == '/') {
