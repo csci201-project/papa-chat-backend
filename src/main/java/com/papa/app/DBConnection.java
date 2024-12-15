@@ -279,7 +279,7 @@ public class DBConnection {
 		try {
 			// Check if the class already exists
 			int classID = getClassID(classCode);
-			if(classID == -1) {
+			if(classID != -1) {
 				return 1;
 			}
 			// Register the class
