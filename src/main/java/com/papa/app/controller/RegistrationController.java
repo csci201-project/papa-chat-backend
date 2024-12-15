@@ -1,20 +1,14 @@
-package com.papa.app;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+package com.papa.app.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import java.io.IOException;
+
 import org.springframework.web.bind.annotation.*;
+
+import com.papa.app.DBConnection;
+import com.papa.app.User;
 
 @RestController
 @RequestMapping("/registerVerification")

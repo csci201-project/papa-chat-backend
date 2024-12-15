@@ -28,7 +28,7 @@ public class DBConnection {
 	private PreparedStatement ps = null;
 	private ResultSet rs = null;
 	private String DBusername = "root"; // CHANGE
-	private String DBpassword = "root3430"; // CHANGE
+	private String DBpassword = "rootroot"; // CHANGE
 
 	// ========================================== Database
 	// ==========================================
@@ -41,9 +41,10 @@ public class DBConnection {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/papachat?useSSL=false",
-					DBusername,
-					DBpassword);
+				System.getenv("SPRING_DATASOURCE_URL") != null ? System.getenv("SPRING_DATASOURCE_URL") : "jdbc:mysql://localhost:3306/papachat?useSSL=false",
+				System.getenv("SPRING_DATASOURCE_USERNAME") != null ? System.getenv("SPRING_DATASOURCE_USERNAME") : DBusername,
+				System.getenv("SPRING_DATASOURCE_PASSWORD") != null ? System.getenv("SPRING_DATASOURCE_PASSWORD") : DBpassword
+			);
 		} catch (ClassNotFoundException | SQLException e) {
 			System.err.println("Database connection failed: " + e.getMessage());
 			e.printStackTrace();

@@ -4,7 +4,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.papa.app.DBConnection;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/profile")
