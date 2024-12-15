@@ -29,7 +29,7 @@ public class RegistrationController {
     	//User user = om.fromJson(request.getReader(), User.class);
     	ObjectNode preparedResponse = om.createObjectNode();
     	
-    	int success = DBConnection.registerUser("fname", "lname", "email", user.getUsername(), user.getPassword());
+    	int success = DBConnection.registerUser(user.getUsername(), user.getPassword());
     	if(success == 1) {
     		// User already exists
     		System.out.println("User " + user.getUsername() + " already exists");

@@ -29,7 +29,7 @@ public class DBConnection {
 	private PreparedStatement ps = null;
 	private ResultSet rs = null;
 	private String DBusername = "root"; // CHANGE
-	private String DBpassword = "sql@csc1"; // CHANGE
+	private String DBpassword = "root"; // CHANGE
 
 	// ========================================== Database ==========================================
 
