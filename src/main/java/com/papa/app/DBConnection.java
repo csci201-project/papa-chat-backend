@@ -473,7 +473,7 @@ public class DBConnection {
 		}
 		try {
 			// Check if className exists
-			ps = conn.prepareStatement("SELECT classID FROM classes WHERE className=?");
+			ps = conn.prepareStatement("SELECT classID FROM classes WHERE classCode=?");
 			ps.setString(1, classCode);
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -485,7 +485,7 @@ public class DBConnection {
                 if(rs.next()) {
                 	// Save chat history
                 	int userID = rs.getInt("userID");
-                	ps = conn.prepareStatement("INSERT INTO chat_history (classID, userID, date, message) VALUES (?, ?, NOW(), ?)");
+                	ps = conn.prepareStatement("INSERT INTO chat_history (classID, userID, datetime, message) VALUES (?, ?, NOW(), ?)");
         			ps.setInt(1, classID);
         			ps.setInt(2, userID);
         			ps.setString(4, message);

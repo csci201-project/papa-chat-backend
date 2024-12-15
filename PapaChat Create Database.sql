@@ -13,9 +13,6 @@ USE `papachat`;
 CREATE TABLE `classes` (
   `classID` int NOT NULL AUTO_INCREMENT,
   `classCode` varchar(60) NOT NULL,
-  `classDuration` int NOT NULL, # Measured in minutes
-  `classStartTime` int NOT NULL, # class start time at 2:30 pm is 1430
-  `classDays` varchar(60) NOT NULL, # "M, T, W, Th, F, S, Su"
   PRIMARY KEY (`classID`),
   UNIQUE KEY `classID_UNIQUE` (`classID`)
 );
