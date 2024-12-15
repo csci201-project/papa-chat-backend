@@ -37,6 +37,14 @@ public class DBConnection {
 	 * Instantiate a connection with DB. Change DBusername and DBpassword to server's SQL databse
 	 */
 	public DBConnection() {
+		System.out.println("DBConnection constructor called");
+		System.out.println("DBusername: " + DBusername);
+		System.out.println("DBpassword: " + DBpassword);
+		
+		System.out.println("System.getenv(\"SPRING_DATASOURCE_URL\"): " + System.getenv("SPRING_DATASOURCE_URL"));
+		System.out.println("System.getenv(\"SPRING_DATASOURCE_USERNAME\"): " + System.getenv("SPRING_DATASOURCE_USERNAME"));
+		System.out.println("System.getenv(\"SPRING_DATASOURCE_PASSWORD\"): " + System.getenv("SPRING_DATASOURCE_PASSWORD"));
+
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(
